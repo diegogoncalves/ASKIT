@@ -10,6 +10,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.os.Build;
+import com.facebook.*;
+import com.facebook.model.*;
 
 public class MainActivity extends ActionBarActivity {
 
