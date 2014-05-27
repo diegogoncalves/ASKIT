@@ -1,67 +1,162 @@
 package com.example.askit;
 
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
-import android.support.v4.app.Fragment;
+
+
+import android.content.Intent;
 import android.os.Bundle;
-import android.view.LayoutInflater;
+import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.os.Build;
-import com.facebook.*;
-import com.facebook.model.*;
+import android.widget.TextView;
+
+import com.facebook.Request;
+import com.facebook.Response;
+import com.facebook.Session;
+import com.facebook.SessionState;
+import com.facebook.UiLifecycleHelper;
+import com.facebook.model.GraphUser;
+import com.facebook.widget.ProfilePictureView;
 
 public class MainActivity extends ActionBarActivity {
+	private static final int REAUTH_ACTIVITY_CODE = 100;
+	private ProfilePictureView profilePictureView;
+	private TextView userNameView;
+	private UiLifecycleHelper uiHelper;
+	private Session.StatusCallback callback = new Session.StatusCallback() {
+		@Override
+		public void call(final Session session, final SessionState state, final Exception exception) {
+			Log.d("debug","here2");
+			onSessionStateChange(session, state, exception);
+		}
+	};
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
-                    .commit();
-        }
-    }
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		//setContentView(R.layout.activity_main);
+		Log.d("debug","here3");
 
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
+		// Find the user's profile picture custom view
+		profilePictureView = (ProfilePictureView) findViewById(R.id.selection_profile_pic);
+		profilePictureView.setCropped(true);
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
+		// Find the user's name view
+		userNameView = (TextView) findViewById(R.id.selection_user_name);
+		Log.d("debug","here4");
 
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
+		// start Facebook Login
+		Session.openActiveSession(this, true,new Session.StatusCallback() {
+			@Override
+			public void call(final Session session, final SessionState state, final Exception exception) {
+				if (session.isOpened()) {
+					// Get the user's data.
+					Log.d("debug","here5");
+					makeMeRequest2(session);
+				}
+				if(session != null)Log.d("debug","yes");;
+				if(session.isOpened())Log.d("debug","no");;
+			}
+		});
 
-        public PlaceholderFragment() {
-        }
+	}
 
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            return rootView;
-        }
-    }
+	//	@Override
+	//	public void onResume() {
+	//		super.onResume();
+	//		uiHelper.onResume();
+	//	}
+	//
+	//	@Override
+	//	public void onSaveInstanceState(Bundle bundle) {
+	//		super.onSaveInstanceState(bundle);
+	//		uiHelper.onSaveInstanceState(bundle);
+	//	}
+	//
+	//	@Override
+	//	public void onPause() {
+	//		super.onPause();
+	//		uiHelper.onPause();
+	//	}
+	//
+	//	@Override
+	//	public void onDestroy() {
+	//		super.onDestroy();
+	//		uiHelper.onDestroy();
+	//	}
+	//
+	//
+	//
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		//		if (requestCode == REAUTH_ACTIVITY_CODE) {
+		//			uiHelper.onActivityResult(requestCode, resultCode, data);
+		//		}
+		Session.getActiveSession().onActivityResult(this, requestCode, resultCode, data);
+	}
+
+	private void makeMeRequest(final Session session) {
+		// Make an API call to get user data and define a 
+		// new callback to handle the response.
+		Log.d("debug","here7");
+		Request request = Request.newMeRequest(session, 
+				new Request.GraphUserCallback() {
+			@Override
+			public void onCompleted(GraphUser user, Response response) {
+				// If the response is successful
+				if (session == Session.getActiveSession()) {
+					if (user != null) {
+						// Set the id for the ProfilePictureView
+						// view that in turn displays the profile picture.
+						Log.d("debug","here");
+						profilePictureView.setProfileId(user.getId());
+						// Set the Textview's text to the user's name.
+						userNameView.setText(user.getName());
+					}
+				}
+				if (response.getError() != null) {
+					// Handle errors, will do so later.
+				}
+			}
+		});
+		request.executeAsync();
+	} 
+	private void makeMeRequest2(final Session session) {
+		// Make an API call to get user data and define a 
+		// new callback to handle the response.
+		Log.d("debug","here7");
+		Request request = Request.newMeRequest(session, 
+				new Request.GraphUserCallback() {
+			@Override
+			public void onCompleted(GraphUser user, Response response) {
+				// If the response is successful
+
+				if (user != null) {
+					// Set the id for the ProfilePictureView
+					// view that in turn displays the profile picture.
+					Log.d("debug","here");
+					profilePictureView.setProfileId(user.getId());
+					// Set the Textview's text to the user's name.
+					userNameView.setText(user.getName());
+				}
+
+				if (response.getError() != null) {
+					// Handle errors, will do so later.
+				}
+			}
+		});
+		request.executeAsync();
+	} 
+	private void onSessionStateChange(final Session session, SessionState state, Exception exception) {
+		if (session != null && session.isOpened()) {
+			// Get the user's data.
+			Log.d("debug","here5");
+			makeMeRequest(session);
+		}
+		Log.d("debug","here6");
+	}
+
 
 }
